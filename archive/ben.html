@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ben</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600;6..96,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+</head>
+<body>
+
+<div id="loader-overlay">
+  <div id="loader-strips">
+    <div class="loader-strip"></div><div class="loader-strip"></div><div class="loader-strip"></div><div class="loader-strip"></div><div class="loader-strip"></div><div class="loader-strip"></div><div class="loader-strip"></div><div class="loader-strip"></div>
+  </div>
+  <button id="explore-btn" class="explore-btn" type="button">Explore</button>
+</div>
+<script>
+  (() => {
+    const overlay = document.getElementById('loader-overlay');
+    const exploreBtn = document.getElementById('explore-btn');
+    if (!overlay || !exploreBtn) return;
+
+    if (sessionStorage.getItem('introSeen')) {
+      overlay.style.display = 'none';
+      return;
+    }
+
+    const strips = overlay.querySelectorAll('.loader-strip');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    exploreBtn.addEventListener('click', () => {
+      sessionStorage.setItem('introSeen', '1');
+      if (reduceMotion) {
+        overlay.style.display = 'none';
+        return;
+      }
+      const totalMs = 900;
+      const stripTransitionMs = 450;
+      const stagger = (totalMs - stripTransitionMs) / (strips.length - 1);
+
+      exploreBtn.style.transform = 'rotate(360deg)';
+      strips.forEach((strip, i) => {
+        setTimeout(() => { strip.style.transform = 'translateY(-100%)'; }, i * stagger);
+      });
+      setTimeout(() => { exploreBtn.style.opacity = '0'; }, 300);
+      setTimeout(() => { overlay.style.display = 'none'; }, totalMs);
+    });
+  })();
+</script>
+
+<nav id="site-nav">
+  <a href="index.html" class="site-nav-brand" aria-label="Home">
+    <img src="../assets/img/brand/ben-garcia-signature-teal.png" alt="Ben Garcia">
+  </a>
+  <div class="site-nav-links">
+    <div class="nav-dropdown">
+    <button type="button" class="nav-trigger">Work</button>
+    <div class="dropdown-menu">
+      <a href="world.html">World</a>
+      <a href="projects.html">Projects</a>
+    </div>
+  </div>
+    <a href="info.html">Info</a>
+    <a href="contact.html">Contact</a>
+    <a href="oasis.html">Playground</a>
+  </div>
+</nav>
+<script>
+  (() => {
+    const dropdowns = document.querySelectorAll('.nav-dropdown');
+    dropdowns.forEach((dropdown) => {
+      const trigger = dropdown.querySelector('.nav-trigger');
+      if (!trigger) return;
+      // opens on hover, but then STAYS open (even after the mouse leaves) until
+      // something is clicked — the trigger again, a link inside, or anywhere outside
+      dropdown.addEventListener('mouseenter', () => {
+        dropdowns.forEach((d) => { if (d !== dropdown) d.classList.remove('open'); });
+        dropdown.classList.add('open');
+      });
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const wasOpen = dropdown.classList.contains('open');
+        dropdowns.forEach((d) => d.classList.remove('open'));
+        if (!wasOpen) dropdown.classList.add('open');
+      });
+    });
+    document.addEventListener('click', () => {
+      dropdowns.forEach((d) => d.classList.remove('open'));
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') dropdowns.forEach((d) => d.classList.remove('open'));
+    });
+  })();
+</script>
+
+<main>
+  <h1>Ben</h1>
+  <div class="sub">Personal.</div>
+  <p>This page is about Ben.</p>
+
+  <h2 class="section-label kicker">Pillars for Brand</h2>
+  <div class="pillars">
+    <div class="pillar"><h3>Travel</h3></div>
+    <div class="pillar"><h3>Community</h3></div>
+    <div class="pillar"><h3>Lifestyle</h3></div>
+    <div class="pillar"><h3>Health</h3></div>
+  </div>
+</main>
+
+
+<footer class="site-footer">
+  <div class="footer-icons">
+    <a href="https://www.instagram.com/benhidthescene" target="_blank" rel="noopener" class="footer-icon" aria-label="Instagram">
+      <img src="https://cdn.simpleicons.org/instagram/FFFFFF" width="26" height="26" alt="Instagram">
+    </a>
+    <a href="https://www.tiktok.com/@benhidthescene?_r=1&amp;_t=ZP-98Eqc1MHdst" target="_blank" rel="noopener" class="footer-icon" aria-label="TikTok">
+      <img src="https://cdn.simpleicons.org/tiktok/FFFFFF" width="26" height="26" alt="TikTok">
+    </a>
+    <a href="https://www.youtube.com/channel/UC-Mi3nf1ZoJNOhy10pDb14Q" target="_blank" rel="noopener" class="footer-icon" aria-label="YouTube">
+      <img src="https://cdn.simpleicons.org/youtube/FFFFFF" width="26" height="26" alt="YouTube">
+    </a>
+    <a href="https://open.spotify.com/user/z5sthfplxseh3ltzan1x4bdd7?si=5f4abec039534371" target="_blank" rel="noopener" class="footer-icon" aria-label="Spotify">
+      <img src="https://cdn.simpleicons.org/spotify/FFFFFF" width="26" height="26" alt="Spotify">
+    </a>
+  </div>
+  <span style="position:absolute;right:24px;bottom:14px;font-family:'Work Sans',sans-serif;font-size:12px;color:var(--paper);opacity:0.65;">&copy; 2026 Ben Garcia</span>
+</footer>
+
+</body>
+</html>

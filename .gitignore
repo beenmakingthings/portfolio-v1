@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# editors
+.vscode/
+.idea/
+
+# dependencies (not used here, but harmless to guard)
+node_modules/
+
+# env / secrets
+.env
+.env.*
+
+# logs
+*.log

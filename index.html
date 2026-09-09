@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600;6..96,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/site.css">
+
+<style>
+  /* ---- hero fades into the pinned body block ---- */
+  #hero-stack { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; }
+  #hero-stack #hero { margin: 0; }
+  #hero-copy {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(680px, 86vw);
+    text-align: center;
+    opacity: 0;
+    font-family: 'Work Sans', sans-serif;
+    color: var(--body-ink);
+    font-size: clamp(16px, 1.5vw, 20px);
+    line-height: 1.7;
+  }
+  #hero-copy p + p { margin-top: 1.1em; }
+
+  /* ---- pinned horizontal gallery ---- */
+  #gallery-section {
+    /* One viewport to pin, plus scroll distance per photo. */
+    height: calc(100vh + 9 * 34vh);
+    background: var(--page-bg);
+  }
+  #gallery-sticky {
+    /* start below the sticky nav so the "Experience …" headline is never
+       tucked under it while the gallery is pinned */
+    position: sticky; top: 80px;
+    height: calc(100vh - 80px);
+    display: flex; flex-direction: column; justify-content: center;
+    overflow: hidden;
+  }
+
+  .g-headline {
+    height: 16vh;
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-top: 2vh; padding-bottom: 1vh;
+  }
+  .g-anchor { position: relative; display: inline-block; transform: translateX(-22%); }
+  .g-prefix {
+    font-family: 'Bodoni Moda', serif;
+    font-size: clamp(26px, 4.6vw, 56px);
+    font-weight: 400; letter-spacing: -0.02em;
+    color: var(--muted); white-space: nowrap;
+  }
+  /* One-line window over a vertical stack of words - an invisible scroll wheel.
+     Left-anchored off the fixed-width "Experience" so the first letter never moves. */
+  .g-window {
+    position: absolute; left: 100%; bottom: 0; margin-left: 0.32em;
+    font-family: 'Bodoni Moda', serif;
+    font-size: clamp(26px, 4.6vw, 56px);
+    font-weight: 400; letter-spacing: -0.02em;
+    height: 1.15em; overflow: hidden;
+  }
+  .g-list { display: block; will-change: transform; }
+  .g-item {
+    display: block; height: 1.15em; line-height: 1.15em;
+    color: var(--ink); white-space: nowrap; text-align: left;
+  }
+
+  .g-track { position: relative; flex: 1; overflow: hidden; }
+  .g-lane { position: absolute; top: 0; left: 0; height: 100%; will-change: transform; }
+
+  .g-slide-wrap {
+    position: absolute; top: 50%;
+    display: flex; flex-direction: column; align-items: flex-start;
+  }
+  .g-slide {
+    position: relative; border-radius: 14px; overflow: hidden;
+    box-shadow: 0 20px 40px rgba(17,17,17,0.14);
+    transition: box-shadow 400ms ease;
+  }
+  .g-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .g-slide.active { box-shadow: 0 24px 48px rgba(17,17,17,0.2); }
+  /* Hover is a focus cue only - it never changes which photo is centred. */
+  .g-slide:hover {
+    cursor: pointer;
+    box-shadow: 0 24px 48px rgba(17,17,17,0.24), 0 0 0 3px var(--ink);
+    z-index: 20;
+  }
+  .g-caption {
+    margin-top: 14px;
+    font-family: 'Work Sans', sans-serif;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(44,44,44,0.35);
+    transition: color 300ms ease; white-space: nowrap;
+  }
+  .g-slide-wrap.active .g-caption { color: var(--body-ink); }
+
+  .g-indicators {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 12px; padding: 2vh 0 4vh;
+  }
+  .g-bars { display: flex; align-items: center; justify-content: center; gap: 4px; height: 40px; }
+  .g-bars i { display: block; width: 2px; background: rgba(44,44,44,0.28); border-radius: 2px; }
+  .g-bars i.active { background: var(--ink); }
+  .g-label {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: rgba(44,44,44,0.55);
+  }
+
+  /* ---- closing body block ---- */
+  #closing-block {
+    min-height: 70vh;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--page-bg);
+    padding: 12vh 24px;
+  }
+  .closing-inner {
+    width: min(680px, 86vw); text-align: center;
+    font-family: 'Work Sans', sans-serif;
+    color: var(--body-ink);
+    font-size: clamp(16px, 1.5vw, 20px); line-height: 1.7;
+  }
+  .closing-inner p + p { margin-top: 1.4em; }
+  .closing-inner a { color: var(--ink); }
+
+  @media (prefers-reduced-motion: reduce) {
+    #hero-copy { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="site-nav">
+  <a href="index.html" class="site-nav-brand" aria-label="Home">
+    <img src="assets/img/brand/ben-garcia-signature-teal.png" alt="Ben Garcia">
+  </a>
+  <div class="site-nav-links">
+    <a href="world.html">World</a>
+    <a href="info.html">Info</a>
+    <a href="contact.html">Contact</a>
+    <a href="oasis.html">Playground</a>
+  </div>
+</nav>
+<style>
+  #hero-section {
+    height: 220vh;
+    position: relative;
+  }
+  #hero-sticky {
+    position: sticky; top: 80px;
+    height: calc(100vh - 80px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  #hero {
+    font-family: 'Bodoni Moda', serif;
+    color: var(--ink);
+    text-align: center;
+    line-height: 1.25;
+    padding: 0 20px;
+    margin: 0;
+    max-width: 1300px;
+    word-spacing: clamp(4px, 2vw, 24px);
+  }
+  #hero .hero-line { font-size: clamp(32px, 9vw, 100px); }
+  #hero .hero-word { display: inline-block; white-space: nowrap; }
+  #hero .letter { display: inline-block; }
+  #hero a.letter { cursor: pointer; text-decoration: none; }
+  .hero-scroll-arrow { margin-top: 20px; color: var(--ink); opacity: 0.6; }
+</style>
+
+<section id="hero-section">
+  <div id="hero-sticky">
+    <div id="hero-stack">
+      <h1 id="hero">
+      <span class="hero-line">
+        <span class="hero-word"><span class="letter" data-speed="1.36">P</span><span class="letter" data-speed="1.10">h</span><span class="letter" data-speed="1.15">o</span><span class="letter" data-speed="1.42">t</span><span class="letter" data-speed="0.95">o</span><span class="letter" data-speed="1.15">g</span><span class="letter" data-speed="1.34">r</span><span class="letter" data-speed="0.99">a</span><span class="letter" data-speed="1.12">p</span><span class="letter" data-speed="1.15">h</span><span class="letter" data-speed="1.43">i</span><span class="letter" data-speed="1.18">n</span><span class="letter" data-speed="1.05">g</span></span>
+        <span class="hero-word"><span class="letter" data-speed="0.82">T</span><span class="letter" data-speed="1.35">h</span><span class="letter" data-speed="0.84">e</span></span>
+      </span>
+      <span class="hero-line">
+        <span class="hero-word"><a href="world.html" class="letter" data-speed="0.92" style="color:var(--muted);">W</a><a href="world.html" class="letter" data-speed="0.84" style="color:var(--muted);">o</a><a href="world.html" class="letter" data-speed="1.17" style="color:var(--muted);">r</a><a href="world.html" class="letter" data-speed="1.23" style="color:var(--muted);">l</a><a href="world.html" class="letter" data-speed="1.26" style="color:var(--muted);">d</a></span>
+        <span class="hero-word"><span class="letter" data-speed="1.17">B</span><span class="letter" data-speed="0.84">e</span><span class="letter" data-speed="1.40">f</span><span class="letter" data-speed="1.02">o</span><span class="letter" data-speed="1.36">r</span><span class="letter" data-speed="1.30">e</span></span>
+        <span class="hero-word"><span class="letter" data-speed="0.84">I</span><span class="letter" data-speed="1.01">t</span><span class="letter" data-speed="0.89">'</span><span class="letter" data-speed="1.50">s</span></span>
+        <span class="hero-word"><a href="pillars.html" class="letter" data-speed="0.88" style="color:var(--ink);">G</a><a href="pillars.html" class="letter" data-speed="0.83" style="color:var(--ink);">o</a><a href="pillars.html" class="letter" data-speed="0.87" style="color:var(--ink);">n</a><a href="pillars.html" class="letter" data-speed="1.46" style="color:var(--ink);">e</a></span>
+      </span>
+    </h1>
+      <div id="hero-copy">
+        <p>Ben Garcia is a photographer working between portraiture and place &mdash;
+        chasing the light that only shows up once in ever-beautiful,
+        ever-fleeting moments, and yet we will remember for lifetimes.</p>
+        <p>What follows is his commitment after university to see for himself
+        how truly big this rock is.</p>
+      </div>
+    </div>
+    <div class="hero-scroll-arrow" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 16l-7-7 1.41-1.41L12 13.17l5.59-5.58L19 9z"/></svg>
+    </div>
+  </div>
+</section>
+
+
+<section id="gallery-section">
+  <div id="gallery-sticky">
+    <div class="g-headline">
+      <span class="g-anchor">
+        <span class="g-prefix">Experience</span>
+        <span class="g-window"><span class="g-list" id="g-list"></span></span>
+      </span>
+    </div>
+
+    <div class="g-track" id="g-track">
+      <div class="g-lane" id="g-lane"></div>
+    </div>
+
+    <div class="g-indicators">
+      <div class="g-bars" id="g-bars"></div>
+      <div class="g-label" id="g-label">Image #1</div>
+    </div>
+  </div>
+</section>
+
+<section id="closing-block">
+  <div class="closing-inner">
+    <p>Every frame is unique to the life presented in that given moment. The
+    life did not change so much as the light kept deciding to.</p>
+    <p><a href="world.html">See where else the work has taken him &rarr;</a></p>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="footer-icons">
+    <a href="https://www.instagram.com/benhidthescene" target="_blank" rel="noopener" class="footer-icon" aria-label="Instagram">
+      <img src="https://cdn.simpleicons.org/instagram/FFFFFF" width="26" height="26" alt="Instagram">
+    </a>
+    <a href="https://www.tiktok.com/@benhidthescene?_r=1&amp;_t=ZP-98Eqc1MHdst" target="_blank" rel="noopener" class="footer-icon" aria-label="TikTok">
+      <img src="https://cdn.simpleicons.org/tiktok/FFFFFF" width="26" height="26" alt="TikTok">
+    </a>
+    <a href="https://www.youtube.com/channel/UC-Mi3nf1ZoJNOhy10pDb14Q" target="_blank" rel="noopener" class="footer-icon" aria-label="YouTube">
+      <img src="https://cdn.simpleicons.org/youtube/FFFFFF" width="26" height="26" alt="YouTube">
+    </a>
+    <a href="https://open.spotify.com/user/z5sthfplxseh3ltzan1x4bdd7?si=5f4abec039534371" target="_blank" rel="noopener" class="footer-icon" aria-label="Spotify">
+      <img src="https://cdn.simpleicons.org/spotify/FFFFFF" width="26" height="26" alt="Spotify">
+    </a>
+  </div>
+  <span style="position:absolute;right:24px;bottom:14px;font-family:'Work Sans',sans-serif;font-size:12px;color:var(--paper);opacity:0.65;">&copy; 2026 Ben Garcia</span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+  (() => {
+    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+    gsap.registerPlugin(ScrollTrigger);
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return;
+
+    document.querySelectorAll('#hero .letter').forEach((letter) => {
+      const speed = parseFloat(letter.dataset.speed);
+      const isDramatic = Math.random() < 0.25; // ~1 in 4 letters falls much further
+      const fallDistance = isDramatic ? 2600 : 1100;
+      const rotation = (Math.random() - 0.5) * (isDramatic ? 120 : 60);
+      const drift = (Math.random() - 0.5) * 600;
+      gsap.to(letter, {
+        y: (1 - speed) * fallDistance,
+        x: drift,
+        rotation: rotation,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: '#hero-section',
+          start: 'top top',
+          end: 'bottom top',
+          scrub: 0.2,
+        },
+      });
+    });
+
+    // Hero dissolves into the pinned body block as the section scrolls past.
+    gsap.to('#hero', {
+      opacity: 0,
+      ease: 'none',
+      scrollTrigger: { trigger: '#hero-section', start: 'top top', end: '55% top', scrub: 0.2 },
+    });
+    gsap.fromTo('#hero-copy',
+      { opacity: 0, y: 24 },
+      {
+        opacity: 1, y: 0, ease: 'none',
+        scrollTrigger: { trigger: '#hero-section', start: '40% top', end: '80% top', scrub: 0.2 },
+      }
+    );
+  })();
+</script>
+
+
+<script>
+  // ---- pinned horizontal gallery, driven by the page's vertical scroll ----
+  (() => {
+    const section = document.getElementById('gallery-section');
+    const track = document.getElementById('g-track');
+    const lane = document.getElementById('g-lane');
+    const list = document.getElementById('g-list');
+    const bars = document.getElementById('g-bars');
+    const label = document.getElementById('g-label');
+    if (!section || !lane) return;
+
+    const SUBJECTS = ['Cities', 'Community', 'Culture', 'Events', 'Food', 'Luxury', 'Nature', 'People', 'Stories', 'Streets', 'Sunsets'];
+    // Per-subject photo overrides — everything else falls back to the Greece set.
+    const SLIDE_OVERRIDES = {
+      'People': { src: 'assets/img/gallery/people-01.jpg', alt: 'Ben with a shopkeeper', caption: 'People' },
+      'Luxury': { src: 'assets/img/gallery/luxury-01.jpg', alt: 'Louis Vuitton bag staged in a forest', caption: 'Luxury' },
+      'Sunsets': { src: 'assets/img/gallery/sunsets-01.jpg', alt: 'Sunset over water behind a city skyline', caption: 'Sunsets' },
+      'Food': { src: 'assets/img/gallery/food-01.jpg', alt: 'A street food vendor grilling skewers at night', caption: 'Food' },
+      'Streets': { src: 'assets/img/gallery/streets-01.jpg', alt: 'A city street lined with buildings, seen from the middle of the road', caption: 'Streets' },
+      'Culture': { src: 'assets/img/gallery/culture-01.jpg', alt: 'The ornate domed interior of a historic mosque', caption: 'Culture', zoom: 1.05 },
+      'Stories': { src: 'assets/img/gallery/stories-01.jpg', alt: 'A wall covered in stickers, names, and messages left by visitors', caption: 'Stories' },
+      'Cities': { src: 'assets/img/gallery/cities-01.jpg', alt: 'A dense crowd filling a city street between skyscrapers', caption: 'Cities' },
+      'Events': { src: 'assets/img/gallery/events-01.jpg', alt: 'A crowd with hands raised at a concert under purple stage lights', caption: 'Events' },
+      'Community': { src: 'assets/img/gallery/community-01.jpg', alt: 'A group of twelve people posed together on marble steps', caption: 'Community' },
+      'Nature': { src: 'assets/img/gallery/nature-01.jpg', alt: 'A green mountain valley under cloudy sky', caption: 'Nature' },
+    };
+    const COUNT = 11;
+    // Pyramid tiers by distance from centre: biggest, medium, smallest.
+    // Centre bumped 20% larger, adjacent slides 10% larger, from the original 1.0 / 0.72 / 0.45.
+    const TIERS = [1.2, 0.792, 0.45];
+    const BRIGHT = [1, 0.96, 0.92];
+
+    for (let i = 0; i < COUNT; i++) {
+      const wrap = document.createElement('div');
+      wrap.className = 'g-slide-wrap';
+
+      const slide = document.createElement('div');
+      slide.className = 'g-slide';
+
+      const override = SLIDE_OVERRIDES[SUBJECTS[i % SUBJECTS.length]];
+
+      const img = document.createElement('img');
+      img.src = override
+        ? override.src
+        : 'assets/img/greece/ohiosunset_fall25_' + String(i + 1).padStart(2, '0') + '.jpg';
+      img.alt = override ? override.alt : 'Greece photo ' + (i + 1);
+      img.loading = 'lazy';
+      if (override && override.zoom) img.style.transform = 'scale(' + override.zoom + ')';
+      slide.appendChild(img);
+
+      const cap = document.createElement('div');
+      cap.className = 'g-caption';
+      cap.textContent = override ? override.caption : 'Greece';
+
+      wrap.appendChild(slide);
+      wrap.appendChild(cap);
+      lane.appendChild(wrap);
+
+      // One word per photo, so the wheel maps 1:1 onto scroll progression
+      // and never has to jump to wrap around.
+      const item = document.createElement('span');
+      item.className = 'g-item';
+      item.textContent = SUBJECTS[i % SUBJECTS.length];
+      list.appendChild(item);
+
+      const bar = document.createElement('i');
+      bars.appendChild(bar);
+    }
+
+    const wraps = [...lane.children];
+    const frames = wraps.map((w) => w.querySelector('.g-slide'));
+    const barEls = [...bars.children];
+
+    let baseH = 0, baseW = 0, gap = 0, viewW = 0, lineH = 0;
+    function measure() {
+      baseH = window.innerHeight * 0.40;
+      baseW = baseH * 3 / 4;           // 3:4 portrait
+      gap = window.innerWidth * 0.025; // fixed gutter
+      viewW = track.clientWidth;
+      lineH = list.firstChild ? list.firstChild.offsetHeight : 0;
+    }
+
+    const lerpArr = (arr, f) => {
+      const i0 = Math.min(Math.floor(f), arr.length - 1);
+      const i1 = Math.min(i0 + 1, arr.length - 1);
+      return arr[i0] + (arr[i1] - arr[i0]) * (f - i0);
+    };
+
+    let pos = 0, posTarget = 0, lastClosest = 0;
+
+    function scrollProgress() {
+      const rect = section.getBoundingClientRect();
+      const total = section.offsetHeight - window.innerHeight;
+      if (total <= 0) return 0;
+      return Math.max(0, Math.min(1, -rect.top / total));
+    }
+
+    function update() {
+      const n = wraps.length;
+      const scales = [], widths = [];
+
+      for (let i = 0; i < n; i++) {
+        const f = Math.min(Math.abs(i - pos), TIERS.length - 1);
+        const s = lerpArr(TIERS, f);
+        scales.push(s);
+        widths.push(baseW * s);
+      }
+
+      // Lay out left to right with a constant gutter. Because the widths feed
+      // straight into these positions, a photo growing physically pushes its
+      // neighbours outward instead of overlapping them.
+      const xs = [];
+      let x = 0;
+      for (let i = 0; i < n; i++) { xs.push(x); x += widths[i] + gap; }
+
+      const i0 = Math.max(0, Math.min(Math.floor(pos), n - 1));
+      const i1 = Math.min(i0 + 1, n - 1);
+      const t = pos - i0;
+      const c0 = xs[i0] + widths[i0] / 2;
+      const c1 = xs[i1] + widths[i1] / 2;
+      const centerX = c0 + (c1 - c0) * t;
+
+      lane.style.transform = 'translateX(' + (viewW / 2 - centerX).toFixed(2) + 'px)';
+
+      const closest = Math.max(0, Math.min(Math.round(pos), n - 1));
+      if (closest !== lastClosest) {
+        lastClosest = closest;
+        if (navigator.vibrate) navigator.vibrate(10);
+      }
+
+      for (let i = 0; i < n; i++) {
+        const f = Math.min(Math.abs(i - pos), TIERS.length - 1);
+        wraps[i].style.left = xs[i].toFixed(2) + 'px';
+        wraps[i].style.transform = 'translateY(-50%)';
+        wraps[i].style.zIndex = String(10 - Math.round(f));
+        frames[i].style.width = widths[i].toFixed(2) + 'px';
+        frames[i].style.height = (baseH * scales[i]).toFixed(2) + 'px';
+        frames[i].style.filter = 'brightness(' + lerpArr(BRIGHT, f).toFixed(3) + ')';
+        frames[i].classList.toggle('active', i === closest);
+        wraps[i].classList.toggle('active', i === closest);
+      }
+
+      // The word wheel rides the same fractional position as the photos, so the
+      // text slides in lockstep rather than snapping at a threshold.
+      list.style.transform = 'translateY(' + (-pos * lineH).toFixed(2) + 'px)';
+
+      barEls.forEach((bar, i) => {
+        const h = Math.max(0, 1 - Math.abs(i - pos) / 6);
+        bar.style.height = (6 + h * 34).toFixed(1) + 'px';
+        bar.classList.toggle('active', i === closest);
+      });
+
+      label.textContent = 'Image #' + (closest + 1);
+    }
+
+    let last = performance.now();
+    function tick(now) {
+      // Frame-rate independent easing, so the glide feels the same at 60Hz and 120Hz.
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+
+      posTarget = scrollProgress() * (wraps.length - 1);
+      const diff = posTarget - pos;
+      // Snappier catch-up than before, so each photo's arrival reads as a distinct beat
+      // rather than a continuous blur between frames.
+      pos = Math.abs(diff) > 0.0005 ? pos + diff * (1 - Math.pow(0.0000005, dt)) : posTarget;
+
+      update();
+      requestAnimationFrame(tick);
+    }
+
+    window.addEventListener('resize', () => { measure(); update(); });
+    measure();
+    update();
+    requestAnimationFrame(tick);
+  })();
+</script>
+</body>
+</html>

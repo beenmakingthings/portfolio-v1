@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600;6..96,700&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/site.css">
+<style>
+  .world-console {
+    --console-bg: #ffffff;
+    --console-panel: var(--paper);
+    --console-grid: rgba(176,141,87,0.14);
+    --console-line: rgba(47,82,73,0.35);
+    --console-text: var(--body-ink);
+    --console-text-dim: rgba(44,44,44,0.55);
+    --console-active: var(--ink);
+    --console-highlight: var(--muted);
+    background: var(--console-bg);
+    padding: 48px clamp(20px,5vw,60px) 72px;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .console-header {
+    max-width: 1400px; margin: 0 auto 36px;
+    display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  }
+  .console-header .kicker { margin: 0; }
+  .console-meta {
+    display: flex; gap: 24px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.05em;
+    color: var(--console-text-dim);
+  }
+  .console-meta b { color: var(--console-active); font-weight: 600; }
+
+  .console-body {
+    max-width: 1400px; margin: 0 auto;
+    display: flex; gap: 40px; align-items: flex-start;
+  }
+
+  /* ---- manifest (place list) ---- */
+  .manifest {
+    list-style: none; margin: 0; padding: 0;
+    width: 210px; flex-shrink: 0;
+    max-height: 70vh;
+    overflow-y: auto;
+    border-top: 1px solid var(--console-line);
+    scrollbar-width: thin;
+    scrollbar-color: var(--console-line) transparent;
+  }
+  .manifest::-webkit-scrollbar { width: 6px; }
+  .manifest::-webkit-scrollbar-track { background: transparent; }
+  .manifest::-webkit-scrollbar-thumb { background: var(--console-line); }
+  .manifest li {
+    display: flex; align-items: baseline; gap: 12px;
+    padding: 13px 4px;
+    border-bottom: 1px solid rgba(176,141,87,0.16);
+    cursor: pointer;
+    transition: padding-left 0.2s ease, background-color 0.2s ease;
+  }
+  .manifest li:hover, .manifest li.manifest-active {
+    padding-left: 8px;
+    background: rgba(176,141,87,0.07);
+  }
+  .manifest-index {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--console-active); opacity: 0.85;
+  }
+  .manifest-name {
+    font-family: 'Work Sans', sans-serif; font-size: 14px; font-weight: 500;
+    color: var(--console-text);
+  }
+
+  /* ---- map frame + HUD chrome ---- */
+  .map-frame {
+    position: relative; flex: 1; min-width: 280px;
+    background: var(--console-bg);
+    padding: 20px;
+  }
+  .map-frame-corner {
+    position: absolute; width: 22px; height: 22px;
+    border-color: var(--console-line); border-style: solid; border-width: 0;
+    pointer-events: none; z-index: 4;
+  }
+  .map-frame-corner.tl { top: 6px; left: 6px; border-top-width: 1.5px; border-left-width: 1.5px; }
+  .map-frame-corner.tr { top: 6px; right: 6px; border-top-width: 1.5px; border-right-width: 1.5px; }
+  .map-frame-corner.bl { bottom: 6px; left: 6px; border-bottom-width: 1.5px; border-left-width: 1.5px; }
+  .map-frame-corner.br { bottom: 6px; right: 6px; border-bottom-width: 1.5px; border-right-width: 1.5px; }
+
+  .map-viewport {
+    position: relative; overflow: hidden;
+    aspect-ratio: 4378.13 / 2434.94;
+    background: var(--console-bg);
+    -webkit-user-select: none; user-select: none;
+  }
+  .map-zoom-layer { position: absolute; inset: 0; }
+  .map-grid {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      repeating-linear-gradient(to right, var(--console-grid) 0, var(--console-grid) 1px, transparent 1px, transparent 40px),
+      repeating-linear-gradient(to bottom, var(--console-grid) 0, var(--console-grid) 1px, transparent 1px, transparent 40px);
+  }
+  .map-image {
+    width: 100%; height: 100%; object-fit: cover; display: block; position: relative;
+    filter: invert(1);
+    -webkit-user-drag: none; user-drag: none; pointer-events: none;
+  }
+
+  /* ---- pins: classic teardrop marker, tip anchored on the coordinate ---- */
+  .map-pin {
+    position: absolute; transform: translate(-50%, -100%);
+    width: 24px; height: 32px;
+    display: block;
+    text-decoration: none; cursor: pointer;
+  }
+  .pin-ring {
+    position: absolute; left: 50%; bottom: -1px;
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 1px solid var(--console-active);
+    opacity: 0; transform: translate(-50%, 0) scale(0.5);
+    z-index: 1;
+  }
+  .map-pin:hover .pin-ring, .map-pin.pin-active .pin-ring {
+    animation: pin-pulse 1.4s ease-out infinite;
+  }
+  .pin-icon {
+    position: relative; z-index: 2;
+    display: block; width: 24px; height: 32px;
+    fill: var(--console-line);
+    stroke: var(--console-bg); stroke-width: 1;
+    transform-origin: 50% 100%;
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5));
+    transition: fill 0.2s ease, transform 0.2s ease, filter 0.2s ease;
+  }
+  .map-pin:hover .pin-icon, .map-pin.pin-active .pin-icon {
+    fill: var(--console-active);
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 7px rgba(176,141,87,0.6));
+  }
+  @keyframes pin-pulse {
+    0% { opacity: 0.8; transform: translate(-50%, 0) scale(0.5); }
+    100% { opacity: 0; transform: translate(-50%, 0) scale(2); }
+  }
+
+  .pin-popup {
+    position: absolute; top: 100%; left: 50%; transform: translate(-50%, 10px);
+    min-width: 200px; background: var(--console-panel);
+    border: 1px solid var(--console-line);
+    padding: 12px 14px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 5;
+  }
+  .map-pin:hover .pin-popup, .map-pin.pin-active .pin-popup {
+    opacity: 1; transform: translate(-50%, 16px);
+  }
+  .pin-popup-coords {
+    display: block; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--console-active); letter-spacing: 0.05em; margin-bottom: 5px;
+  }
+  .pin-popup-title { display: block; font-size: 13px; margin-bottom: 6px; cursor: pointer; transition: color 0.2s ease; }
+  .map-pin:hover .pin-popup-title, .map-pin.pin-active .pin-popup-title { color: var(--console-active); }
+  .pin-popup-desc { font-family: 'Work Sans', sans-serif; font-size: 12px; line-height: 1.5; color: var(--console-text-dim); margin: 0; }
+  .pin-popup-cta {
+    display: inline-block; margin-top: 9px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--console-active);
+    transition: transform 0.2s ease;
+  }
+  .map-pin:hover .pin-popup-cta, .map-pin.pin-active .pin-popup-cta { transform: translateX(3px); }
+
+  /* ---- compass ---- */
+  .map-compass {
+    position: absolute; top: 24px; right: 24px;
+    width: 62px; height: 62px; border-radius: 50%;
+    border: 1px solid var(--console-line);
+    background: rgba(255,255,255,0.8);
+    z-index: 4;
+  }
+  .map-compass::before {
+    content: ''; position: absolute; top: 50%; left: 50%; width: 4px; height: 4px;
+    border-radius: 50%; background: var(--console-active); transform: translate(-50%, -50%);
+  }
+  .map-compass span {
+    position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600;
+    color: var(--console-text);
+  }
+  .map-compass .compass-n { top: 5px; left: 50%; transform: translateX(-50%); color: var(--console-active); }
+  .map-compass .compass-s { bottom: 5px; left: 50%; transform: translateX(-50%); }
+  .map-compass .compass-e { right: 6px; top: 50%; transform: translateY(-50%); }
+  .map-compass .compass-w { left: 6px; top: 50%; transform: translateY(-50%); }
+
+  /* ---- cursor readout ---- */
+  .map-readout {
+    position: absolute; bottom: 24px; left: 24px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.03em;
+    color: var(--console-active);
+    background: rgba(255,255,255,0.85); border: 1px solid var(--console-line);
+    padding: 6px 10px; z-index: 4;
+  }
+
+  @media (max-width: 768px) {
+    .console-body { flex-direction: column; }
+    .manifest { width: 100%; max-height: 240px; display: flex; flex-wrap: wrap; gap: 0 16px; border-top: none; }
+    .manifest li { border-bottom: none; width: auto; }
+    .map-frame { width: 100%; padding: 12px; }
+    .map-compass { width: 48px; height: 48px; top: 14px; right: 14px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pin-ring { animation: none !important; }
+    .map-pin, .pin-icon, .pin-popup, .manifest li { transition: none !important; }
+  }
+
+  /* ---- photo preview modal (opened by clicking a pin or manifest entry) ---- */
+  .photo-modal {
+    position: fixed; inset: 0; z-index: 200;
+    display: none; align-items: center; justify-content: center;
+    padding: 40px 20px;
+  }
+  .photo-modal.open { display: flex; }
+  .photo-modal-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(10,10,12,0.72);
+    backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  }
+  .photo-modal-panel {
+    position: relative; z-index: 1;
+    width: min(880px, 100%); max-height: 84vh; overflow-y: auto;
+    background: var(--paper); border: 1px solid var(--hairline);
+    padding: 40px 36px 48px;
+  }
+  .photo-modal-close {
+    position: absolute; top: 16px; right: 16px;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--hairline); background: transparent;
+    color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  .photo-modal-close:hover { background: var(--ink); color: var(--paper); }
+  .photo-modal-coords {
+    display: block; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 0.05em; color: var(--muted); margin-bottom: 6px;
+  }
+  .photo-modal-title { font-size: 26px; margin: 0 0 28px; }
+  /* ---- deck: home-page-style pyramid slideshow, scroll or drag to browse ---- */
+  .catalog { position: relative; }
+  .deck-track {
+    position: relative; height: clamp(280px, 46vh, 480px); overflow: hidden;
+    cursor: grab; touch-action: pan-y; -webkit-user-select: none; user-select: none;
+  }
+  .deck-track:active { cursor: grabbing; }
+  .deck-lane { position: absolute; top: 0; left: 0; height: 100%; will-change: transform; }
+  .deck-slide-wrap {
+    position: absolute; top: 50%;
+    display: flex; flex-direction: column; align-items: flex-start;
+  }
+  .deck-slide {
+    position: relative; border-radius: 10px; overflow: hidden;
+    box-shadow: 0 20px 40px rgba(17,17,17,0.14);
+    transition: box-shadow 300ms ease;
+  }
+  .deck-slide img { width: 100%; height: 100%; object-fit: cover; display: block; -webkit-user-drag: none; pointer-events: none; }
+  .deck-slide-wrap.active .deck-slide { box-shadow: 0 26px 52px rgba(17,17,17,0.22); cursor: zoom-in; }
+  .deck-num {
+    position: absolute; top: 10px; left: 10px; z-index: 2;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.05em;
+    color: #fff; background: rgba(47,82,73,0.78); padding: 2px 6px;
+  }
+  .deck-caption {
+    margin-top: 12px;
+    font-family: 'Work Sans', sans-serif; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(44,44,44,0.3); white-space: nowrap; transition: color 300ms ease;
+  }
+  .deck-slide-wrap.active .deck-caption { color: var(--body-ink); }
+  .deck-hint {
+    position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 3;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em;
+    color: var(--muted); background: rgba(255,255,255,0.82); padding: 4px 10px;
+    pointer-events: none; transition: opacity 0.5s ease;
+  }
+
+  .catalog-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 42px; height: 42px; border-radius: 50%;
+    border: 1px solid var(--hairline); background: rgba(255,255,255,0.92);
+    color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer; z-index: 4;
+    display: flex; align-items: center; justify-content: center;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  .catalog-nav:hover { background: var(--ink); color: #fff; }
+  .catalog-nav.prev { left: 10px; }
+  .catalog-nav.next { right: 10px; }
+
+  .catalog-index { display: flex; flex-direction: column; align-items: center; gap: 9px; margin-top: 18px; }
+  .catalog-bars { display: flex; align-items: center; gap: 4px; height: 34px; }
+  .catalog-bars i {
+    display: block; width: 2px; height: 8px; background: rgba(44,44,44,0.26); border-radius: 2px;
+    transition: height 0.2s ease, background-color 0.2s ease;
+  }
+  .catalog-bars i.active { background: var(--ink); }
+  .catalog-readout {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: var(--muted);
+  }
+
+  .catalog-upload {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: max-content; margin: 20px auto 0; padding: 12px 24px; cursor: pointer;
+    border: 1.5px dashed var(--hairline); color: var(--ink);
+    font-family: 'Bodoni Moda', serif; font-weight: 700; text-transform: uppercase;
+    letter-spacing: var(--label-tracking); font-size: 12px;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+  .catalog-upload:hover, .catalog.dragover .catalog-upload {
+    background: var(--ink); color: var(--paper); border-color: var(--ink);
+  }
+  .catalog.dragover .deck-track { outline: 2px dashed var(--ink); outline-offset: -4px; }
+
+  .photo-modal-empty {
+    font-family: 'Work Sans', sans-serif; font-size: 14px;
+    color: var(--muted);
+    text-align: center; padding: 40px 20px; margin: 0;
+    border: 1px dashed var(--hairline);
+  }
+
+  @media (max-width: 768px) {
+    .catalog-nav { display: none; }
+    .deck-track { height: clamp(240px, 42vh, 400px); }
+  }
+
+  /* ---- full-screen image viewer (press a frame to open) ---- */
+  .photo-viewer {
+    position: fixed; inset: 0; z-index: 300;
+    display: none; align-items: center; justify-content: center;
+  }
+  .photo-viewer.open { display: flex; }
+  .photo-viewer-backdrop {
+    position: absolute; inset: 0; background: rgba(10,10,12,0.92);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  }
+  .photo-viewer-img {
+    position: relative; z-index: 1;
+    max-width: 90vw; max-height: 86vh; object-fit: contain;
+    box-shadow: 0 30px 70px rgba(0,0,0,0.55);
+  }
+  .photo-viewer-close {
+    position: absolute; top: 20px; right: 26px; z-index: 3;
+    width: 42px; height: 42px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.4); background: transparent;
+    color: #fff; font-size: 24px; line-height: 1; cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  .photo-viewer-close:hover { background: #fff; color: #111; }
+  .photo-viewer-nav {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
+    width: 52px; height: 52px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.4); background: rgba(0,0,0,0.25);
+    color: #fff; font-size: 26px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  .photo-viewer-nav:hover { background: #fff; color: #111; }
+  .photo-viewer-nav.prev { left: 24px; }
+  .photo-viewer-nav.next { right: 24px; }
+  .photo-viewer-readout {
+    position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 3;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.85);
+  }
+  @media (max-width: 768px) {
+    .photo-viewer-nav { width: 42px; height: 42px; font-size: 22px; }
+    .photo-viewer-nav.prev { left: 10px; } .photo-viewer-nav.next { right: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="site-nav">
+  <a href="index.html" class="site-nav-brand" aria-label="Home">
+    <img src="assets/img/brand/ben-garcia-signature-teal.png" alt="Ben Garcia">
+  </a>
+  <div class="site-nav-links">
+    <a href="world.html" class="active">World</a>
+    <a href="info.html">Info</a>
+    <a href="contact.html">Contact</a>
+    <a href="oasis.html">Playground</a>
+  </div>
+</nav>
+<section class="world-console">
+  <div class="console-header">
+    <h1 class="kicker" style="font-size:26px;">World</h1>
+    <div class="console-meta">
+      <span>ENTRIES <b>12</b></span>
+      <span id="live-clock">--:--:--</span>
+    </div>
+  </div>
+
+  <div class="console-body">
+    <ul class="manifest">
+      <li data-pin="pin-amsterdam"><span class="manifest-index">001</span><span class="manifest-name">Amsterdam</span></li>
+      <li data-pin="pin-edinburgh"><span class="manifest-index">002</span><span class="manifest-name">Edinburgh</span></li>
+      <li data-pin="pin-greece"><span class="manifest-index">003</span><span class="manifest-name">Greece</span></li>
+      <li data-pin="pin-istanbul"><span class="manifest-index">004</span><span class="manifest-name">Istanbul</span></li>
+      <li data-pin="pin-japan"><span class="manifest-index">005</span><span class="manifest-name">Japan</span></li>
+      <li data-pin="pin-la"><span class="manifest-index">006</span><span class="manifest-name">LA</span></li>
+      <li data-pin="pin-london"><span class="manifest-index">007</span><span class="manifest-name">London</span></li>
+      <li data-pin="pin-philippines"><span class="manifest-index">008</span><span class="manifest-name">Philippines</span></li>
+      <li data-pin="pin-puerto-rico"><span class="manifest-index">009</span><span class="manifest-name">Puerto Rico</span></li>
+      <li data-pin="pin-santorini"><span class="manifest-index">010</span><span class="manifest-name">Santorini</span></li>
+      <li data-pin="pin-scotland"><span class="manifest-index">011</span><span class="manifest-name">Scotland</span></li>
+      <li data-pin="pin-toronto"><span class="manifest-index">012</span><span class="manifest-name">Toronto</span></li>
+    </ul>
+
+    <div class="map-frame">
+      <div class="map-frame-corner tl"></div>
+      <div class="map-frame-corner tr"></div>
+      <div class="map-frame-corner bl"></div>
+      <div class="map-frame-corner br"></div>
+
+      <div id="map-viewport" class="map-viewport">
+        <div id="map-zoom-layer" class="map-zoom-layer">
+          <div class="map-grid"></div>
+          <img src="assets/img/world-map.svg" alt="World map" class="map-image" draggable="false">
+
+          <a href="#" id="pin-amsterdam" class="map-pin" style="left:51.361111111111114%;top:20.90555555555556%;">
+            <span class="pin-ring"></span><svg class="pin-icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+            <div class="pin-popup">
+              <span class="pin-popup-coords">52.37&deg;N 4.90&deg;E</span>
+              <span class="pin-popup-title kicker">Amsterdam</span>
+              <p class="pin-popup-desc">Add a project description for Amsterdam.</p>
+            </div>
+          </a>
+          <a href="#" id="pin-edinburgh" class="map-pin" style="left:49.11388888888889%;top:18.916666666666664%;">
+            <span class="pin-ring"></span><svg class="pin-icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+            <div class="pin-popup">
+              <span class="pin-popup-coords">55.95&deg;N 3.19&deg;W</span>
+              <span class="pin-popup-title kicker">Edinburgh</span>
+              <p class="pin-popup-desc">Add a project description for Edinburgh.</p>
+            </div>
+          </a>
+          <a href="#" id="pin-greece" class="map-pin" style="left:56.59166666666666%;top:28.900000000000002%;">
+            <span class="pin-ring"></span><svg class="pin-icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+            <div class="pin-popup">
+              <span class="pin-popup-coords">37.98&deg;N 23.73&deg;E</span>
+              <span class="pin-popup-title kicker">Greece</span>
+              <p class="pin-popup-desc">A summer project shot across the islands and coastline.</p>
+            </div>
+          </a>
+          <a href="#" id="pin-istanbul" class="map-pin" style="left:58.050000000000004%;top:27.21666666666667%;">
+            <span class="pin-ring"></span><svg class="pin-icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+            <div class="pin-popup">
+              <span class="pin-popup-coords">41.01&deg;N 28.98&deg;E</span>
+              <span class="pin-popup-title kicker">Istanbul</span>
+              <p class="pin-popup-desc">Add a project description for Istanbul.</p>
+            </div>
+          </a>
+          <a href="#" id="pin-japan" class="map-pin" style="left:88.80277777777778%;top:30.177777777777777%;">
+            <span class="pin-ring"></span><svg class="pin-icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+            <div class="pin-popup">
+              <span class="pin-popup-coords">35.68&deg;N 139.65&deg;E</span>
+              <span class="pin-popup-title kicker">Japan</span>
+              <p class="pin-popup-desc">Add a project description for Japan.</p>
+            </div>
+          </a>
+          <a href="#" id="pin-la" class="map-pin" style="left:17.15555555555556%;top:31.083333333333336%;">
+            <span class="pin-ring"></span><svg class="pin-icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+            <div class="pin-popup">
+              <span class="pin-popup-coords">34.05&deg;N 118.24&deg;W</span>
+              <span class="pin-popup-title kicker">LA</span>
+              <p class="pin-popup-desc">Add a project description for LA.</p>
+            </div>
+          </a>
+          <a href="#" id="pin-london" class="map-pin" style="left:49.96388888888889%;top:21.383333333333336%;">
+            <span class="pin-ring"></span><svg class="pin-icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+            <div class="pin-popup">
+              <span class="pin-popup-coords">51.51&deg;N 0.13&deg;W</span>
+              <span class="pin-popup-title kicker">London</span>
+              <p class="pin-popup-desc">Add a project description for London.</p>
+            </div>
+          </a>
+          <a href="#" id="pin-philippines" class="map-pin" style="left:83.60555555555555%;top:41.88888888888889%;">
+            <span class="pin-ring"></span><svg class="pin-icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+            <div class="pin-popup">
+              <span class="pin-popup-coords">14.60&deg;N 120.98&deg;E</span>
+              <span class="pin-popup-title kicker">Philippines</span>
+              <p class="pin-popup-desc">Add a project description for the Philippines.</p>
+            </div>
+          </a>
+          <a href="#" id="pin-puerto-rico" class="map-pin" style="left:31.63333333333333%;top:39.73888888888889%;">
+            <span class="pin-ring"></span><svg class="pin-icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+            <div class="pin-popup">
+              <span class="pin-popup-coords">18.47&deg;N 66.11&deg;W</span>
+              <span class="pin-popup-title kicker">Puerto Rico</span>
+              <p class="pin-popup-desc">Add a project description for Puerto Rico.</p>
+            </div>
+          </a>
+          <a href="#" id="pin-santorini" class="map-pin" style="left:57.07222222222222%;top:29.783333333333335%;">
+            <span class="pin-ring"></span><svg class="pin-icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+            <div class="pin-popup">
+              <span class="pin-popup-coords">36.39&deg;N 25.46&deg;E</span>
+              <span class="pin-popup-title kicker">Santorini</span>
+              <p class="pin-popup-desc">Add a project description for Santorini.</p>
+            </div>
+          </a>
+          <a href="#" id="pin-scotland" class="map-pin" style="left:48.833333333333336%;top:18.616666666666664%;">
+            <span class="pin-ring"></span><svg class="pin-icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+            <div class="pin-popup">
+              <span class="pin-popup-coords">56.49&deg;N 4.20&deg;W</span>
+              <span class="pin-popup-title kicker">Scotland</span>
+              <p class="pin-popup-desc">Add a project description for Scotland.</p>
+            </div>
+          </a>
+          <a href="#" id="pin-toronto" class="map-pin" style="left:27.950000000000003%;top:25.75%;">
+            <span class="pin-ring"></span><svg class="pin-icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+            <div class="pin-popup">
+              <span class="pin-popup-coords">43.65&deg;N 79.38&deg;W</span>
+              <span class="pin-popup-title kicker">Toronto</span>
+              <p class="pin-popup-desc">Add a project description for Toronto.</p>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <div class="map-compass" aria-hidden="true">
+        <span class="compass-n">N</span><span class="compass-e">E</span><span class="compass-s">S</span><span class="compass-w">W</span>
+      </div>
+      <div class="map-readout" id="cursor-readout">--.--&deg;  --.--&deg;</div>
+    </div>
+  </div>
+</section>
+
+<div id="photo-modal" class="photo-modal" aria-hidden="true">
+  <div class="photo-modal-backdrop" data-close="1"></div>
+  <div class="photo-modal-panel">
+    <button type="button" class="photo-modal-close" data-close="1" aria-label="Close">&times;</button>
+    <span class="photo-modal-coords" id="photo-modal-coords"></span>
+    <h2 class="kicker photo-modal-title" id="photo-modal-title"></h2>
+
+    <div class="catalog" id="catalog">
+      <div class="deck-track" id="deck-track">
+        <div class="deck-lane" id="deck-lane"></div>
+        <button type="button" class="catalog-nav prev" id="catalog-prev" aria-label="Previous photo">&lsaquo;</button>
+        <button type="button" class="catalog-nav next" id="catalog-next" aria-label="Next photo">&rsaquo;</button>
+        <span class="deck-hint" id="deck-hint">scroll or drag to browse</span>
+      </div>
+
+      <div class="catalog-index">
+        <div class="catalog-bars" id="catalog-bars"></div>
+        <span class="catalog-readout" id="catalog-readout">IMG 00 / 00</span>
+      </div>
+
+      <p class="photo-modal-empty" id="photo-modal-empty">Drop photos here, or use &ldquo;Add photos&rdquo; to build this catalog.</p>
+
+      <label class="catalog-upload">
+        <input type="file" id="catalog-input" accept="image/*" multiple hidden>
+        <span>+ Add photos</span>
+      </label>
+    </div>
+  </div>
+</div>
+
+<div id="photo-viewer" class="photo-viewer" aria-hidden="true">
+  <div class="photo-viewer-backdrop" data-vclose="1"></div>
+  <button type="button" class="photo-viewer-close" data-vclose="1" aria-label="Close">&times;</button>
+  <button type="button" class="photo-viewer-nav prev" id="viewer-prev" aria-label="Previous photo">&lsaquo;</button>
+  <img class="photo-viewer-img" id="viewer-img" src="" alt="">
+  <button type="button" class="photo-viewer-nav next" id="viewer-next" aria-label="Next photo">&rsaquo;</button>
+  <div class="photo-viewer-readout" id="viewer-readout"></div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-icons">
+    <a href="https://www.instagram.com/benhidthescene" target="_blank" rel="noopener" class="footer-icon" aria-label="Instagram">
+      <img src="https://cdn.simpleicons.org/instagram/FFFFFF" width="26" height="26" alt="Instagram">
+    </a>
+    <a href="https://www.tiktok.com/@benhidthescene?_r=1&amp;_t=ZP-98Eqc1MHdst" target="_blank" rel="noopener" class="footer-icon" aria-label="TikTok">
+      <img src="https://cdn.simpleicons.org/tiktok/FFFFFF" width="26" height="26" alt="TikTok">
+    </a>
+    <a href="https://www.youtube.com/channel/UC-Mi3nf1ZoJNOhy10pDb14Q" target="_blank" rel="noopener" class="footer-icon" aria-label="YouTube">
+      <img src="https://cdn.simpleicons.org/youtube/FFFFFF" width="26" height="26" alt="YouTube">
+    </a>
+    <a href="https://open.spotify.com/user/z5sthfplxseh3ltzan1x4bdd7?si=5f4abec039534371" target="_blank" rel="noopener" class="footer-icon" aria-label="Spotify">
+      <img src="https://cdn.simpleicons.org/spotify/FFFFFF" width="26" height="26" alt="Spotify">
+    </a>
+  </div>
+  <span style="position:absolute;right:24px;bottom:14px;font-family:'Work Sans',sans-serif;font-size:12px;color:var(--paper);opacity:0.65;">&copy; 2026 Ben Garcia</span>
+</footer>
+
+<script>
+  // manifest list <-> map pin hover sync, plus click-to-open photo preview
+  (() => {
+    // Per-location photo catalogs. Uploads (session-only object URLs) get pushed here.
+    // Each location has a matching assets/img/<slug>/ folder. seedFolder builds the numbered
+    // filenames to load from it, same way Greece is pre-seeded — add photos named
+    // <filePrefix>_01.jpg, _02.jpg, etc. to the folder, then bump count to match.
+    function seedFolder(slug, count, filePrefix) {
+      return Array.from({ length: count }, (_, i) =>
+        'assets/img/' + slug + '/' + filePrefix + '_' + String(i + 1).padStart(2, '0') + '.jpg');
+    }
+    const LOCATION_PHOTOS = {
+      'pin-amsterdam': seedFolder('amsterdam', 0, 'amsterdam'),
+      'pin-edinburgh': seedFolder('edinburgh', 0, 'edinburgh'),
+      'pin-greece': seedFolder('greece', 20, 'ohiosunset_fall25'),
+      'pin-istanbul': seedFolder('istanbul', 0, 'istanbul'),
+      'pin-japan': seedFolder('japan', 0, 'japan'),
+      'pin-la': seedFolder('la', 0, 'la'),
+      'pin-london': seedFolder('london', 0, 'london'),
+      'pin-philippines': seedFolder('philippines', 0, 'philippines'),
+      'pin-puerto-rico': seedFolder('puerto-rico', 0, 'puerto-rico'),
+      'pin-santorini': seedFolder('santorini', 0, 'santorini'),
+      'pin-scotland': seedFolder('scotland', 0, 'scotland'),
+      'pin-toronto': seedFolder('toronto', 0, 'toronto'),
+    };
+
+    const modal = document.getElementById('photo-modal');
+    const modalTitle = document.getElementById('photo-modal-title');
+    const modalCoords = document.getElementById('photo-modal-coords');
+    const catalog = document.getElementById('catalog');
+    const track = document.getElementById('deck-track');
+    const lane = document.getElementById('deck-lane');
+    const barsEl = document.getElementById('catalog-bars');
+    const readout = document.getElementById('catalog-readout');
+    const emptyEl = document.getElementById('photo-modal-empty');
+    const hintEl = document.getElementById('deck-hint');
+    const prevBtn = document.getElementById('catalog-prev');
+    const nextBtn = document.getElementById('catalog-next');
+    const fileInput = document.getElementById('catalog-input');
+
+    const viewer = document.getElementById('photo-viewer');
+    const viewerImg = document.getElementById('viewer-img');
+    const viewerReadout = document.getElementById('viewer-readout');
+    const viewerPrev = document.getElementById('viewer-prev');
+    const viewerNext = document.getElementById('viewer-next');
+
+    let currentId = null, activeIndex = 0, viewerIndex = 0;
+
+    // ---- pinned pyramid deck (same feel as the home page gallery) ----
+    const TIERS = [1.0, 0.72, 0.45];   // scale by distance from centre
+    const BRIGHT = [1, 0.96, 0.9];
+    let wraps = [], slides = [], n = 0;
+    let pos = 0, posTarget = 0;
+    let baseH = 0, baseW = 0, gap = 0, viewW = 0;
+    let rafId = null, lastT = 0;
+
+    const lerpArr = (arr, f) => {
+      const i0 = Math.min(Math.floor(f), arr.length - 1);
+      const i1 = Math.min(i0 + 1, arr.length - 1);
+      return arr[i0] + (arr[i1] - arr[i0]) * (f - i0);
+    };
+    function measure() {
+      baseH = track.clientHeight * 0.8;
+      baseW = baseH * 3 / 4;               // 3:4 portrait
+      gap = Math.max(16, track.clientWidth * 0.02);
+      viewW = track.clientWidth;
+    }
+
+    function buildDeck(pinId, altName) {
+      currentId = pinId;
+      const photos = LOCATION_PHOTOS[pinId] || (LOCATION_PHOTOS[pinId] = []);
+      lane.innerHTML = ''; barsEl.innerHTML = '';
+      n = photos.length;
+      const has = n > 0, multi = n > 1;
+      track.style.display = has ? 'block' : 'none';
+      barsEl.parentElement.style.display = has ? 'flex' : 'none';
+      emptyEl.style.display = has ? 'none' : 'block';
+      prevBtn.style.display = multi ? 'flex' : 'none';
+      nextBtn.style.display = multi ? 'flex' : 'none';
+      if (hintEl) hintEl.style.opacity = multi ? '1' : '0';
+      if (!has) { readout.textContent = 'IMG 00 / 00'; stopLoop(); return; }
+
+      photos.forEach((src, i) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'deck-slide-wrap';
+        wrap.innerHTML =
+          '<div class="deck-slide">' +
+            '<div class="deck-num">' + String(i + 1).padStart(2, '0') + '</div>' +
+            '<img src="' + src + '" alt="' + (altName || '') + ' ' + (i + 1) + '" loading="lazy" draggable="false">' +
+          '</div>' +
+          '<div class="deck-caption">' + (altName || '') + '</div>';
+        wrap.addEventListener('click', () => {
+          if (dragMoved) return;
+          if (Math.round(pos) === i) openViewer(i); else posTarget = i;
+        });
+        lane.appendChild(wrap);
+        barsEl.appendChild(document.createElement('i'));
+      });
+      wraps = [...lane.children];
+      slides = wraps.map((w) => w.querySelector('.deck-slide'));
+      pos = 0; posTarget = 0; activeIndex = 0;
+      requestAnimationFrame(() => { measure(); layout(); startLoop(); });
+    }
+
+    function layout() {
+      if (!n) return;
+      const scales = [], widths = [];
+      for (let i = 0; i < n; i++) {
+        const s = lerpArr(TIERS, Math.min(Math.abs(i - pos), TIERS.length - 1));
+        scales.push(s); widths.push(baseW * s);
+      }
+      const xs = []; let x = 0;
+      for (let i = 0; i < n; i++) { xs.push(x); x += widths[i] + gap; }
+      const i0 = Math.max(0, Math.min(Math.floor(pos), n - 1));
+      const i1 = Math.min(i0 + 1, n - 1);
+      const t = pos - i0;
+      const c0 = xs[i0] + widths[i0] / 2, c1 = xs[i1] + widths[i1] / 2;
+      const centerX = c0 + (c1 - c0) * t;
+      lane.style.transform = 'translateX(' + (viewW / 2 - centerX).toFixed(2) + 'px)';
+
+      const closest = Math.max(0, Math.min(Math.round(pos), n - 1));
+      activeIndex = closest;
+      for (let i = 0; i < n; i++) {
+        const f = Math.min(Math.abs(i - pos), TIERS.length - 1);
+        wraps[i].style.left = xs[i].toFixed(2) + 'px';
+        wraps[i].style.transform = 'translateY(-50%)';
+        wraps[i].style.zIndex = String(20 - Math.round(f));
+        slides[i].style.width = widths[i].toFixed(2) + 'px';
+        slides[i].style.height = (baseH * scales[i]).toFixed(2) + 'px';
+        slides[i].style.filter = 'brightness(' + lerpArr(BRIGHT, f).toFixed(3) + ')';
+        wraps[i].classList.toggle('active', i === closest);
+      }
+      [...barsEl.children].forEach((bar, i) => {
+        const closeness = Math.max(0, 1 - Math.abs(i - pos) / 6);
+        bar.style.height = (8 + closeness * 26).toFixed(1) + 'px';
+        bar.classList.toggle('active', i === closest);
+      });
+      readout.textContent = 'IMG ' + String(closest + 1).padStart(2, '0') + ' / ' + String(n).padStart(2, '0');
+    }
+
+    function tick(now) {
+      const dt = Math.min((now - (lastT || now)) / 1000, 0.05); lastT = now;
+      posTarget = Math.max(0, Math.min(posTarget, n - 1));
+      const diff = posTarget - pos;
+      if (Math.abs(diff) > 0.0008 || dragging) {
+        pos += diff * (1 - Math.pow(0.0025, dt));
+        layout();
+        rafId = requestAnimationFrame(tick);
+      } else {
+        pos = posTarget; layout(); rafId = null; // settled — go idle until the next input
+      }
+    }
+    function startLoop() { if (!rafId) { lastT = 0; rafId = requestAnimationFrame(tick); } }
+    function stopLoop() { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
+    function deckGoTo(i) { posTarget = Math.max(0, Math.min(i, n - 1)); if (hintEl) hintEl.style.opacity = '0'; startLoop(); }
+
+    // ---- input: wheel + drag to move through the deck ----
+    track.addEventListener('wheel', (e) => {
+      if (!n) return;
+      e.preventDefault();
+      const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      posTarget = Math.max(0, Math.min(posTarget + d * 0.0055, n - 1));
+      if (hintEl) hintEl.style.opacity = '0';
+      startLoop();
+    }, { passive: false });
+
+    let dragging = false, dragStartX = 0, dragStartPos = 0, dragMoved = false;
+    track.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.catalog-nav') || !n) return;
+      dragging = true; dragMoved = false;
+      dragStartX = e.clientX; dragStartPos = posTarget;
+      track.setPointerCapture(e.pointerId);
+      startLoop();
+    });
+    track.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - dragStartX;
+      if (Math.abs(dx) > 4) { dragMoved = true; if (hintEl) hintEl.style.opacity = '0'; }
+      posTarget = Math.max(0, Math.min(dragStartPos - dx / (baseW + gap), n - 1));
+    });
+    function endDrag() {
+      if (!dragging) return;
+      dragging = false;
+      posTarget = Math.max(0, Math.min(Math.round(posTarget), n - 1)); // settle to nearest
+    }
+    track.addEventListener('pointerup', endDrag);
+    track.addEventListener('pointercancel', endDrag);
+    prevBtn.addEventListener('click', () => deckGoTo(Math.round(posTarget) - 1));
+    nextBtn.addEventListener('click', () => deckGoTo(Math.round(posTarget) + 1));
+    window.addEventListener('resize', () => { if (modal.classList.contains('open') && n) { measure(); layout(); } });
+
+    // ---- uploads: file picker + drag-and-drop, session-only preview URLs ----
+    function addFiles(fileList) {
+      const imgs = [...fileList].filter((f) => f.type.startsWith('image/'));
+      if (!imgs.length || !currentId) return;
+      imgs.forEach((f) => LOCATION_PHOTOS[currentId].push(URL.createObjectURL(f)));
+      const jumpTo = LOCATION_PHOTOS[currentId].length - imgs.length;
+      buildDeck(currentId, modalTitle.textContent);
+      requestAnimationFrame(() => deckGoTo(jumpTo));
+    }
+    fileInput.addEventListener('change', (e) => { addFiles(e.target.files); fileInput.value = ''; });
+    ['dragenter', 'dragover'].forEach((ev) =>
+      catalog.addEventListener(ev, (e) => { e.preventDefault(); catalog.classList.add('dragover'); }));
+    ['dragleave', 'drop'].forEach((ev) =>
+      catalog.addEventListener(ev, (e) => { e.preventDefault(); if (ev === 'drop' || e.target === catalog) catalog.classList.remove('dragover'); }));
+    catalog.addEventListener('drop', (e) => { if (e.dataTransfer) addFiles(e.dataTransfer.files); });
+
+    // ---- full-screen image viewer ----
+    function showViewerPhoto() {
+      const photos = LOCATION_PHOTOS[currentId] || [];
+      if (!photos.length) return;
+      viewerIndex = Math.max(0, Math.min(viewerIndex, photos.length - 1));
+      viewerImg.src = photos[viewerIndex];
+      viewerImg.alt = (modalTitle.textContent || '') + ' ' + (viewerIndex + 1);
+      viewerReadout.textContent = 'IMG ' + String(viewerIndex + 1).padStart(2, '0') + ' / ' + String(photos.length).padStart(2, '0');
+      const multi = photos.length > 1;
+      viewerPrev.style.display = multi ? 'flex' : 'none';
+      viewerNext.style.display = multi ? 'flex' : 'none';
+    }
+    function openViewer(i) {
+      viewerIndex = i;
+      showViewerPhoto();
+      viewer.classList.add('open');
+      viewer.setAttribute('aria-hidden', 'false');
+    }
+    function viewerGo(i) {
+      const photos = LOCATION_PHOTOS[currentId] || [];
+      if (!photos.length) return;
+      viewerIndex = (i + photos.length) % photos.length; // wrap around
+      showViewerPhoto();
+    }
+    function closeViewer() {
+      viewer.classList.remove('open');
+      viewer.setAttribute('aria-hidden', 'true');
+      viewerImg.src = '';
+      deckGoTo(viewerIndex); // keep the deck on the last-viewed photo
+    }
+    viewer.querySelectorAll('[data-vclose]').forEach((el) => el.addEventListener('click', closeViewer));
+    viewerPrev.addEventListener('click', () => viewerGo(viewerIndex - 1));
+    viewerNext.addEventListener('click', () => viewerGo(viewerIndex + 1));
+
+    function openPhotoModal(pin) {
+      if (!modal) return;
+      const title = pin.querySelector('.pin-popup-title');
+      const coords = pin.querySelector('.pin-popup-coords');
+      modalTitle.textContent = title ? title.textContent : '';
+      modalCoords.textContent = coords ? coords.textContent : '';
+      buildDeck(pin.id, title ? title.textContent : '');
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closePhotoModal() {
+      if (!modal) return;
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      stopLoop();
+    }
+
+    if (modal) {
+      modal.querySelectorAll('[data-close]').forEach((el) => {
+        el.addEventListener('click', closePhotoModal);
+      });
+      document.addEventListener('keydown', (e) => {
+        if (viewer.classList.contains('open')) {
+          if (e.key === 'Escape') closeViewer();
+          else if (e.key === 'ArrowLeft') viewerGo(viewerIndex - 1);
+          else if (e.key === 'ArrowRight') viewerGo(viewerIndex + 1);
+          return;
+        }
+        if (!modal.classList.contains('open')) return;
+        if (e.key === 'Escape') closePhotoModal();
+        else if (e.key === 'ArrowLeft') deckGoTo(activeIndex - 1);
+        else if (e.key === 'ArrowRight') deckGoTo(activeIndex + 1);
+      });
+    }
+
+    document.querySelectorAll('.manifest li').forEach((li) => {
+      const pin = document.getElementById(li.dataset.pin);
+      if (!pin) return;
+      li.addEventListener('mouseenter', () => { pin.classList.add('pin-active'); li.classList.add('manifest-active'); });
+      li.addEventListener('mouseleave', () => { pin.classList.remove('pin-active'); li.classList.remove('manifest-active'); });
+      li.addEventListener('click', () => openPhotoModal(pin));
+    });
+
+    document.querySelectorAll('.map-pin').forEach((pin) => {
+      // add a clear "View photos" cue to each popup so it reads as a way into the catalog
+      const popup = pin.querySelector('.pin-popup');
+      if (popup && !popup.querySelector('.pin-popup-cta')) {
+        const n = (LOCATION_PHOTOS[pin.id] || []).length;
+        const cta = document.createElement('span');
+        cta.className = 'pin-popup-cta';
+        cta.textContent = n ? ('View ' + n + ' photo' + (n === 1 ? '' : 's') + ' →') : 'Add photos →';
+        popup.appendChild(cta);
+      }
+      pin.addEventListener('click', (e) => {
+        e.preventDefault();
+        openPhotoModal(pin);
+      });
+    });
+  })();
+</script>
+
+<script>
+  // live cursor coordinate readout
+  (() => {
+    const viewport = document.getElementById('map-viewport');
+    const readoutEl = document.getElementById('cursor-readout');
+    if (!viewport || !readoutEl) return;
+
+    viewport.addEventListener('pointermove', (e) => {
+      // treat the map as a simple equirectangular projection for an approximate lat/lon
+      const rect = viewport.getBoundingClientRect();
+      const pctX = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+      const pctY = Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height));
+      const lon = pctX * 360 - 180;
+      const lat = 90 - pctY * 180;
+      const lonDir = lon >= 0 ? 'E' : 'W';
+      const latDir = lat >= 0 ? 'N' : 'S';
+      readoutEl.textContent = Math.abs(lat).toFixed(2) + '°' + latDir + '  ' + Math.abs(lon).toFixed(2) + '°' + lonDir;
+    });
+    viewport.addEventListener('pointerleave', () => {
+      readoutEl.textContent = '--.--°  --.--°';
+    });
+  })();
+</script>
+
+<script>
+  // console clock
+  (() => {
+    const el = document.getElementById('live-clock');
+    if (!el) return;
+    function tick() {
+      const d = new Date();
+      el.textContent = String(d.getHours()).padStart(2, '0') + ':' +
+        String(d.getMinutes()).padStart(2, '0') + ':' +
+        String(d.getSeconds()).padStart(2, '0');
+    }
+    tick();
+    setInterval(tick, 1000);
+  })();
+</script>
+
+</body>
+</html>

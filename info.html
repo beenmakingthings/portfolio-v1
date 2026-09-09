@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Info</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600;6..96,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/site.css">
+<style>
+  .info-photo {
+    width: 420px; height: 530px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden; cursor: pointer;
+    background: var(--paper); -webkit-tap-highlight-color: transparent;
+  }
+  .info-photo img { width: 100%; height: 100%; object-fit: cover; display: none; }
+  .info-photo.has-photo img { display: block; }
+  .info-photo-ph {
+    font-family: 'Bodoni Moda', serif; font-weight: 700; text-transform: uppercase;
+    letter-spacing: var(--label-tracking); font-size: 13px; color: var(--muted);
+    border: 1.5px dashed var(--hairline); padding: 14px 22px;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+  .info-photo:hover .info-photo-ph { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .info-photo.has-photo .info-photo-ph { display: none; }
+  .info-photo.dragover { outline: 2px dashed var(--ink); outline-offset: -6px; }
+  @media (max-width: 560px) {
+    .info-photo { width: 100%; height: 60vw; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="site-nav">
+  <a href="index.html" class="site-nav-brand" aria-label="Home">
+    <img src="assets/img/brand/ben-garcia-signature-teal.png" alt="Ben Garcia">
+  </a>
+  <div class="site-nav-links">
+    <a href="world.html">World</a>
+    <a href="info.html" class="active">Info</a>
+    <a href="contact.html">Contact</a>
+    <a href="oasis.html">Playground</a>
+  </div>
+</nav>
+<section style="max-width:1000px;margin:0 auto;padding:60px 40px 100px;display:flex;gap:50px;align-items:flex-start;flex-wrap:wrap;">
+  <label class="info-photo card has-photo" id="info-photo">
+    <input type="file" id="info-photo-input" accept="image/*" hidden>
+    <img id="info-photo-img" alt="Ben Garcia" src="assets/img/brand/ben-profile.jpg">
+    <span class="info-photo-ph">+ Import photo</span>
+  </label>
+  <div style="flex:1;min-width:320px;">
+    <h2 class="kicker" style="font-size:26px;margin-bottom:24px;">About</h2>
+
+    <p style="font-family:'Work Sans',sans-serif;line-height:1.7;color:var(--body-ink);margin:0 0 18px;">Ben Garcia is a photographer, videographer, designer, and curator from New Jersey, currently working on the road. He photographs people, travel, landscape, culture, and events: the ordinary moments most of us pass without turning our heads. But the photograph is only the visible half. Beneath each frame lies an intention — what to show and what to withhold. Across photography, film, design, and curation the through-line never breaks: work that feels timeless yet carries a personality, each piece telling its own story.</p>
+
+    <p style="font-family:'Work Sans',sans-serif;line-height:1.7;color:var(--body-ink);margin:0 0 18px;">He arrived at photography sideways. Set on the pre-medical track — psychology and marketing, a psychiatrist in the making — he picked up a camera as a hobby in college, and as he moved deeper into the humanities the two pursuits began to mirror each other: the study of people and the study of the image, each teaching him how to read human expression. Self-taught, and held by the plainest of impulses — to memorialize a feeling and place it in another's hands (if a tree falls in an empty forest, who is there to know it fell).</p>
+
+    <hr style="border:none;border-top:1px solid var(--hairline);margin:32px 0;">
+
+    <p style="font-family:'Work Sans',sans-serif;line-height:1.7;color:var(--body-ink);margin:0 0 18px;">I truly believe eyes are windows to the soul and as such, my photos are digitally-encased windows to the world as I see it. Being behind the camera is a powerful position to be in as I allow myself to get a third person perspective, capturing facets of life in every frame. I'm motivated by drawing people together around a single shared moment, seeing the energy that decorates a room and connecting the parts of 'God' we have in all of us.</p>
+
+    <p style="font-family:'Work Sans',sans-serif;line-height:1.7;color:var(--body-ink);margin:0 0 18px;">In this era of fleeting trends and transient values, my work is a way of remembering what I have seen, and honoring it, instead of letting it slip past unmarked. When I shoot, the camera can stand like a barrier between me and the person before it, and my whole purpose is to dissolve that barrier. Working with me, you'll be around someone with a clear pursuit of a larger, more inclusive understanding of life and to represent everything with love and care.</p>
+
+    <p style="font-family:'Work Sans',sans-serif;line-height:1.7;color:var(--body-ink);margin:0 0 18px;">Currently traveling in Southeast Asia, Ben is available for commissions, editorial, collaborations, and hire.</p>
+
+    <a href="mailto:photographed.by.ben@gmail.com" class="link-underline">photographed.by.ben@gmail.com</a>
+    <div style="margin-top:24px;">
+      <a href="projects.html" class="link-arrow">View the work</a>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="footer-icons">
+    <a href="https://www.instagram.com/benhidthescene" target="_blank" rel="noopener" class="footer-icon" aria-label="Instagram">
+      <img src="https://cdn.simpleicons.org/instagram/FFFFFF" width="26" height="26" alt="Instagram">
+    </a>
+    <a href="https://www.tiktok.com/@benhidthescene?_r=1&amp;_t=ZP-98Eqc1MHdst" target="_blank" rel="noopener" class="footer-icon" aria-label="TikTok">
+      <img src="https://cdn.simpleicons.org/tiktok/FFFFFF" width="26" height="26" alt="TikTok">
+    </a>
+    <a href="https://www.youtube.com/channel/UC-Mi3nf1ZoJNOhy10pDb14Q" target="_blank" rel="noopener" class="footer-icon" aria-label="YouTube">
+      <img src="https://cdn.simpleicons.org/youtube/FFFFFF" width="26" height="26" alt="YouTube">
+    </a>
+    <a href="https://open.spotify.com/user/z5sthfplxseh3ltzan1x4bdd7?si=5f4abec039534371" target="_blank" rel="noopener" class="footer-icon" aria-label="Spotify">
+      <img src="https://cdn.simpleicons.org/spotify/FFFFFF" width="26" height="26" alt="Spotify">
+    </a>
+  </div>
+  <span style="position:absolute;right:24px;bottom:14px;font-family:'Work Sans',sans-serif;font-size:12px;color:var(--paper);opacity:0.65;">&copy; 2026 Ben Garcia</span>
+</footer>
+
+<script>
+  // left photo box: click or drag-drop to import a photo (session preview).
+  // To set it permanently, put the file in assets/img/brand/ and use: <img id="info-photo-img" src="assets/img/brand/your-photo.jpg">
+  // plus add class="info-photo card has-photo" on the label.
+  (() => {
+    const box = document.getElementById('info-photo');
+    const input = document.getElementById('info-photo-input');
+    const img = document.getElementById('info-photo-img');
+    if (!box || !input || !img) return;
+    function setPhoto(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+      img.src = URL.createObjectURL(file);
+      box.classList.add('has-photo');
+    }
+    input.addEventListener('change', (e) => setPhoto(e.target.files[0]));
+    ['dragenter', 'dragover'].forEach((ev) => box.addEventListener(ev, (e) => { e.preventDefault(); box.classList.add('dragover'); }));
+    ['dragleave', 'drop'].forEach((ev) => box.addEventListener(ev, (e) => { e.preventDefault(); if (ev === 'drop' || e.target === box) box.classList.remove('dragover'); }));
+    box.addEventListener('drop', (e) => { if (e.dataTransfer && e.dataTransfer.files[0]) setPhoto(e.dataTransfer.files[0]); });
+  })();
+</script>
+
+</body>
+</html>
