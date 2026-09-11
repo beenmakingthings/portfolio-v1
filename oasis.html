@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600;6..96,700&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/img/playground/load-up.jpg">
 <style>
-  html, body { margin: 0; height: 100%; background: #0a0a0c; overflow: hidden; }
+  html, body { margin: 0; height: 100%; background: #fbf9f4; overflow: hidden; }
   canvas { display: block; touch-action: none; }
   #hint {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -853,7 +853,7 @@ const codeTexture = makeCodeTexture();
 
 // ---------- scene / camera / renderer ----------
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0a0a0c);
+scene.background = new THREE.Color(0xfbf9f4);
 
 const camera = new THREE.OrthographicCamera(
   -sizes.width / 2, sizes.width / 2, sizes.height / 2, -sizes.height / 2, 0.1, 100
