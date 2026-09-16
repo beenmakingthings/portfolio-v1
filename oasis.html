@@ -1125,7 +1125,7 @@ function buildGrid() {
   gridGroup = new THREE.Group();
   scene.add(gridGroup);
 
-  const sp = isTouchDevice;
+  const sp = false; // always use the infinite packed grid — mobile, tablet, and desktop alike
   let rects;
   if (sp) {
     packW = sizes.width;
