@@ -16,6 +16,10 @@
     font-size: 15px;
   }
   .contact-confirm.visible { display: block; }
+
+  @media (max-width: 480px) {
+    #contact-heading { font-size: 32px !important; }
+  }
 </style>
 </head>
 <body>
@@ -24,14 +28,18 @@
   <a href="index.html" class="site-nav-brand" aria-label="Home">
     <img src="assets/img/brand/ben-garcia-signature-teal.png" alt="Ben Garcia">
   </a>
-  <div class="site-nav-links">
+  <div class="site-nav-links" id="site-nav-links">
     <a href="world.html">World</a>
     <a href="info.html">Info</a>
     <a href="contact.html" class="active">Contact</a>
     <a href="oasis.html">Playground</a>
   </div>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="site-nav-links">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
 </nav>
-<section style="max-width:700px;margin:0 auto;padding:60px 40px 100px;">
+<div class="nav-scrim" id="nav-scrim"></div>
+<section style="max-width:700px;margin:0 auto;padding:60px clamp(20px, 6vw, 40px) 100px;">
   <h1 id="contact-heading" class="kicker" style="font-size:42px;text-align:center;margin-bottom:24px;min-height:1.2em;">Contact</h1>
   <p style="font-family:'Work Sans',sans-serif;line-height:1.7;color:var(--body-ink);text-align:center;font-size:17px;">
     I'd love to hear about how I could add value to your project. My specialties are portrait photography, event coverage, travel and editorial work, video, and creative direction — but that list isn't exhaustive!
@@ -123,5 +131,6 @@
   })();
 </script>
 
+<script src="assets/js/nav.js" defer></script>
 </body>
 </html>

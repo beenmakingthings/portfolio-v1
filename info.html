@@ -36,20 +36,24 @@
   <a href="index.html" class="site-nav-brand" aria-label="Home">
     <img src="assets/img/brand/ben-garcia-signature-teal.png" alt="Ben Garcia">
   </a>
-  <div class="site-nav-links">
+  <div class="site-nav-links" id="site-nav-links">
     <a href="world.html">World</a>
     <a href="info.html" class="active">Info</a>
     <a href="contact.html">Contact</a>
     <a href="oasis.html">Playground</a>
   </div>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="site-nav-links">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
 </nav>
-<section style="max-width:1000px;margin:0 auto;padding:60px 40px 100px;display:flex;gap:50px;align-items:flex-start;flex-wrap:wrap;">
+<div class="nav-scrim" id="nav-scrim"></div>
+<section style="max-width:700px;margin:0 auto;padding:60px 40px 100px;display:flex;flex-direction:column;align-items:center;gap:32px;text-align:center;">
   <label class="info-photo card has-photo" id="info-photo">
     <input type="file" id="info-photo-input" accept="image/*" hidden>
     <img id="info-photo-img" alt="Ben Garcia" src="assets/img/brand/ben-profile.jpg">
     <span class="info-photo-ph">+ Import photo</span>
   </label>
-  <div style="flex:1;min-width:320px;">
+  <div style="width:100%;">
     <h2 class="kicker" style="font-size:26px;margin-bottom:24px;">About</h2>
 
     <p style="font-family:'Work Sans',sans-serif;line-height:1.7;color:var(--body-ink);margin:0 0 18px;">Ben Garcia is a photographer, videographer, designer, and curator from New Jersey, currently working on the road. He photographs people, travel, landscape, culture, and events: the ordinary moments most of us pass without turning our heads. But the photograph is only the visible half. Beneath each frame lies an intention — what to show and what to withhold. Across photography, film, design, and curation the through-line never breaks: work that feels timeless yet carries a personality, each piece telling its own story.</p>
@@ -110,5 +114,6 @@
   })();
 </script>
 
+<script src="assets/js/nav.js" defer></script>
 </body>
 </html>

@@ -138,13 +138,17 @@
   <a href="index.html" class="site-nav-brand" aria-label="Home">
     <img src="assets/img/brand/ben-garcia-signature-teal.png" alt="Ben Garcia">
   </a>
-  <div class="site-nav-links">
+  <div class="site-nav-links" id="site-nav-links">
     <a href="world.html">World</a>
     <a href="info.html">Info</a>
     <a href="contact.html">Contact</a>
     <a href="oasis.html">Playground</a>
   </div>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="site-nav-links">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
 </nav>
+<div class="nav-scrim" id="nav-scrim"></div>
 <style>
   #hero-section {
     height: 220vh;
@@ -473,5 +477,6 @@
     requestAnimationFrame(tick);
   })();
 </script>
+<script src="assets/js/nav.js" defer></script>
 </body>
 </html>

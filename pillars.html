@@ -14,13 +14,17 @@
   <a href="index.html" class="site-nav-brand" aria-label="Home">
     <img src="assets/img/brand/ben-garcia-signature-teal.png" alt="Ben Garcia">
   </a>
-  <div class="site-nav-links">
+  <div class="site-nav-links" id="site-nav-links">
     <a href="world.html">World</a>
     <a href="info.html">Info</a>
     <a href="contact.html">Contact</a>
     <a href="oasis.html">Playground</a>
   </div>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="site-nav-links">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
 </nav>
+<div class="nav-scrim" id="nav-scrim"></div>
 <main>
   <h1>Pillars</h1>
   <div class="sub">What the work stands on.</div>
@@ -52,5 +56,6 @@
   <span style="position:absolute;right:24px;bottom:14px;font-family:'Work Sans',sans-serif;font-size:12px;color:var(--paper);opacity:0.65;">&copy; 2026 Ben Garcia</span>
 </footer>
 
+<script src="assets/js/nav.js" defer></script>
 </body>
 </html>

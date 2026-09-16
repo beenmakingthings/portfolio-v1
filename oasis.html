@@ -19,9 +19,16 @@
     position: fixed; top: 0; left: 0; right: 0; z-index: 20;
     display: flex; align-items: center; justify-content: space-between;
     padding: 18px 32px;
+    pointer-events: none; /* lets clicks/drags on the empty parts of the bar pass through to the canvas */
+  }
+  /* blur lives on a ::before, not on #site-nav itself: -webkit-backdrop-filter
+     on an ancestor pins position:fixed descendants (the mobile drawer) to that
+     ancestor's box on iOS Safari instead of the viewport */
+  #site-nav::before {
+    content: "";
+    position: absolute; inset: 0; z-index: -1;
     background: linear-gradient(to bottom, rgba(6,6,8,0.55), rgba(6,6,8,0));
     backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-    pointer-events: none; /* lets clicks/drags on the empty parts of the bar pass through to the canvas */
   }
   #site-nav a,
   #site-nav button { pointer-events: auto; }
@@ -31,8 +38,10 @@
     opacity: 0.92; transition: opacity 0.2s ease;
   }
   .site-nav-brand:hover img { opacity: 1; }
-  .site-nav-links { display: flex; gap: 28px; }
-  .site-nav-links { align-items: center; }
+  /* .site-nav-links is a normal flex child of #site-nav here, aligned with
+     the logo the same way the brand is. nav.js moves it out to <body> only
+     for the duration it's open on mobile — see nav.js for why. */
+  .site-nav-links { display: flex; gap: 28px; align-items: center; }
   .site-nav-links a {
     color: rgba(255,255,255,0.75); text-decoration: none;
     font-family: 'Bodoni Moda', serif; font-weight: 700; font-size: 13px;
@@ -75,6 +84,64 @@
     opacity: 0; z-index: 5;
   }
 
+  /* ---- mobile nav: this page has its own dark/glass nav, not site.css's ---- */
+  .nav-toggle {
+    display: none;
+    width: 40px; height: 40px;
+    align-items: center; justify-content: center;
+    background: none; border: none; padding: 0;
+    color: rgba(255,255,255,0.85); cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-toggle svg { width: 24px; height: 24px; }
+
+  .nav-scrim {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 25; opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+  .nav-scrim.is-open { display: block; opacity: 1; pointer-events: auto; }
+
+  @media (max-width: 1300px) {
+    #site-nav { padding: 16px 20px; }
+    .nav-toggle { display: flex; }
+
+    .site-nav-links {
+      position: fixed; top: 0; right: 0; bottom: 0;
+      width: fit-content;
+      max-width: 78vw;
+      background: rgba(10,10,12,0.92);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border-left: 1px solid rgba(255,255,255,0.12);
+      flex-direction: column;
+      align-items: flex-start; justify-content: flex-start;
+      gap: 4px;
+      padding: 96px 32px 28px 24px;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      z-index: 30;
+      pointer-events: none;
+    }
+    .site-nav-links.is-open { transform: translateX(0); pointer-events: auto; }
+    .site-nav-links a { width: 100%; padding: 12px 4px; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+
+    /* keep the explode/disintegrate controls and hint text from colliding
+       on narrow screens: controls move above the hint, both shrink slightly */
+    #pg-actions {
+      left: 12px; right: 12px; bottom: 56px;
+      justify-content: center; flex-wrap: wrap; gap: 8px;
+    }
+    .pg-action { padding: 11px 14px; font-size: 11px; min-height: 40px; }
+    #hint { bottom: 14px; font-size: 11px; padding: 0 16px; }
+    #pg-close { top: 76px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-nav-links, .nav-scrim { transition: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -82,13 +149,17 @@
   <a href="index.html" class="site-nav-brand" aria-label="Home">
     <img src="assets/img/brand/ben-garcia-signature.png" alt="Ben Garcia">
   </a>
-  <div class="site-nav-links">
+  <div class="site-nav-links" id="site-nav-links">
     <a href="world.html">World</a>
     <a href="info.html">Info</a>
     <a href="contact.html">Contact</a>
     <a href="oasis.html" class="active">Playground</a>
   </div>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="site-nav-links">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
 </nav>
+<div class="nav-scrim" id="nav-scrim"></div>
 <div id="hint">drag or scroll to explore &middot; click a photo to expand &middot; click again to close</div>
 <button id="pg-close" aria-label="Close">&times;</button>
 
@@ -1043,7 +1114,7 @@ function buildGrid() {
   gridGroup = new THREE.Group();
   scene.add(gridGroup);
 
-  const sp = isSp();
+  const sp = isTouchDevice;
   let rects;
   if (sp) {
     packW = sizes.width;
@@ -1501,7 +1572,7 @@ function onPointerMove(e) {
     if (total > CLICK_MOVE_THRESHOLD) didDrag = true;
   }
   if (isExpanded) return;
-  if (!isSp()) targetX += dx;
+  targetX += dx;
   targetY += dy;
 }
 
@@ -1518,7 +1589,7 @@ function onPointerUp(e) {
 function onWheel(e) {
   if (interactionLocked) return;
   if (isExpanded) return;
-  if (!isSp()) targetX -= e.deltaX;
+  targetX -= e.deltaX;
   targetY -= e.deltaY;
 }
 
@@ -1652,5 +1723,6 @@ startReveal();
 lastFrameMs = performance.now();
 requestAnimationFrame(tick);
 </script>
+<script src="assets/js/nav.js" defer></script>
 </body>
 </html>
