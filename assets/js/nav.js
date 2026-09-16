@@ -22,6 +22,7 @@
     // the nav bar. Detaching it from <nav> while open sidesteps that
     // regardless of which property was the actual trigger.
     document.body.appendChild(links);
+    links.offsetHeight; // force a reflow so the slide-in transition reliably plays after the move
     links.classList.add('is-open');
     if (scrim) scrim.classList.add('is-open');
     toggle.setAttribute('aria-expanded', 'true');
@@ -35,7 +36,20 @@
     if (scrim) scrim.classList.remove('is-open');
     toggle.setAttribute('aria-expanded', 'false');
     if (restoreFocus) toggle.focus();
-    anchorParent.insertBefore(links, anchorNext);
+    // wait for the slide-out to finish before moving the panel back inside
+    // <nav> — re-parenting mid-transition would cut the animation short.
+    // The timeout is a fallback for prefers-reduced-motion (no transition
+    // ever fires there) or a missed event.
+    let done = false;
+    const reattach = () => {
+      if (done) return;
+      done = true;
+      links.removeEventListener('transitionend', onEnd);
+      anchorParent.insertBefore(links, anchorNext);
+    };
+    const onEnd = (e) => { if (e.target === links && e.propertyName === 'transform') reattach(); };
+    links.addEventListener('transitionend', onEnd);
+    setTimeout(reattach, 650);
   }
 
   toggle.addEventListener('click', () => {

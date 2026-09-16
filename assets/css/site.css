@@ -36,7 +36,7 @@ a { color: inherit; }
 
 /* ---- nav ---- */
 #site-nav {
-  position: sticky; top: 0; z-index: 20;
+  position: sticky; top: 0; z-index: 35; /* above .site-nav-links (30) so the toggle button/X stays visible and clickable while the drawer is open */
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -92,6 +92,16 @@ a { color: inherit; }
   -webkit-tap-highlight-color: transparent;
 }
 .nav-toggle svg { width: 24px; height: 24px; }
+/* the three bars morph into an X while the drawer is open, keyed off the
+   aria-expanded state nav.js already sets — a visual "tap here to close" */
+.nav-toggle-line {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.3s ease, opacity 0.2s ease;
+}
+.nav-toggle[aria-expanded="true"] .nav-toggle-line-top { transform: translateY(6px) rotate(45deg); }
+.nav-toggle[aria-expanded="true"] .nav-toggle-line-mid { opacity: 0; }
+.nav-toggle[aria-expanded="true"] .nav-toggle-line-bottom { transform: translateY(-6px) rotate(-45deg); }
 
 .nav-scrim {
   display: none;
@@ -117,9 +127,10 @@ a { color: inherit; }
     align-items: flex-start;
     justify-content: flex-start;
     gap: 6px;
-    padding: 96px 32px 28px 24px;
+    padding: 96px 30px 28px 30px;
     transform: translateX(100%);
-    transition: transform 0.3s ease;
+    transition: transform 0.53s cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform;
     z-index: 30;
     overflow-y: auto;
   }
